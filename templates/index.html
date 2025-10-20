@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word to PDF Converter - Toolverse</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-file-pdf me-2"></i>
+                Toolverse
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-home me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-tools me-1"></i>Tools</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-info-circle me-1"></i>About</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Top Banner Ad Space -->
+    <div class="ad-banner">
+        <div class="container">
+            <div class="ad-content">
+                <p class="text-center mb-0">Advertisement Space</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Header -->
+                <div class="text-center mb-5">
+                    <h1 class="display-4 fw-bold text-primary">
+                        <i class="fas fa-file-word me-3"></i>
+                        Word to PDF Converter
+                    </h1>
+                    <p class="lead text-muted">
+                        Convert your Word documents (.doc/.docx) to PDF format quickly and securely
+                    </p>
+                </div>
+
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' }} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Upload Form -->
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-5">
+                        <form id="uploadForm" action="/convert" method="post" enctype="multipart/form-data">
+                            <!-- Drag and Drop Area -->
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                    <h4 class="upload-title">Drop your Word file here</h4>
+                                    <p class="upload-subtitle">or click to browse files</p>
+                                    <input type="file" id="fileInput" name="word_file" accept=".doc,.docx" required class="d-none">
+                                    <div class="upload-info">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Supported formats: .doc, .docx (Max size: 16MB)
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File Info -->
+                            <div id="fileInfo" class="file-info d-none">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file-word text-primary me-3"></i>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 file-name"></h6>
+                                        <small class="text-muted file-size"></small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="removeFile">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Convert Button -->
+                            <div class="text-center mt-4">
+                                <button type="submit" id="convertBtn" class="btn btn-primary btn-lg px-5" disabled>
+                                    <i class="fas fa-magic me-2"></i>
+                                    Convert to PDF
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Progress Bar -->
+                        <div id="progressContainer" class="mt-4 d-none">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center mt-2 mb-0">Converting your document...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Section -->
+                <div class="row mt-5">
+                    <div class="col-md-4">
+                        <div class="feature-card text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h5>Secure</h5>
+                            <p class="text-muted">Your files are processed securely and deleted immediately after conversion.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-bolt"></i>
+                            </div>
+                            <h5>Fast</h5>
+                            <p class="text-muted">Quick conversion process that preserves your document's formatting.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="feature-card text-center">
+                            <div class="feature-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <h5>Responsive</h5>
+                            <p class="text-muted">Works perfectly on desktop, tablet, and mobile devices.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instructions -->
+                <div class="card mt-5">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-question-circle me-2"></i>
+                            How to Use
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="mb-0">
+                            <li>Upload your Word document (.doc or .docx) by dragging and dropping it onto the upload area or clicking to browse.</li>
+                            <li>Click the "Convert to PDF" button to start the conversion process.</li>
+                            <li>Wait for the conversion to complete (usually takes a few seconds).</li>
+                            <li>Your PDF file will automatically download to your device.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Toolverse</h5>
+                    <p class="mb-0">Your ultimate toolkit for document conversion and file management.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2024 Toolverse. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const convertBtn = document.getElementById('convertBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressContainer = document.getElementById('progressContainer');
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        // Handle file selection
+        function handleFile(file) {
+            // Validate file type
+            const allowedTypes = ['.doc', '.docx'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!allowedTypes.includes(fileExtension)) {
+                alert('Please select a valid Word document (.doc or .docx)');
+                return;
+            }
+
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                alert('File size must be less than 16MB');
+                return;
+            }
+
+            // Show file info
+            document.querySelector('.file-name').textContent = file.name;
+            document.querySelector('.file-size').textContent = formatFileSize(file.size);
+            fileInfo.classList.remove('d-none');
+            uploadArea.classList.add('d-none');
+            convertBtn.disabled = false;
+        }
+
+        // Remove file
+        document.getElementById('removeFile').addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.classList.add('d-none');
+            uploadArea.classList.remove('d-none');
+            convertBtn.disabled = true;
+        });
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', (e) => {
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                alert('Please select a file to convert');
+                return;
+            }
+
+            // Show progress
+            progressContainer.classList.remove('d-none');
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Converting...';
+
+            // Simulate progress
+            let progress = 0;
+            const progressBar = document.querySelector('.progress-bar');
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+            }, 200);
+
+            // Reset after 10 seconds (in case of error)
+            setTimeout(() => {
+                clearInterval(interval);
+                progressBar.style.width = '100%';
+                progressContainer.classList.add('d-none');
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = '<i class="fas fa-magic me-2"></i>Convert to PDF';
+            }, 10000);
+        });
+    </script>
+</body>
+</html>
