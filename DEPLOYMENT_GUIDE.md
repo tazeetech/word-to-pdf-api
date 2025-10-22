@@ -37,7 +37,7 @@ This Word to PDF converter is now configured to work on Render.com with LibreOff
 3. **Create a new Web Service** on Render.com
 4. **Configure the service**:
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app_working:app --bind 0.0.0.0:$PORT`
+   - **Start Command**: `gunicorn app:app --bind 0.0.0.0:$PORT`
    - **Python Version**: 3.9 or higher
 5. **Deploy**
 
@@ -84,7 +84,7 @@ chmod +x install_libreoffice.sh
 bash install_libreoffice.sh
 
 # Run the app
-python app_working.py
+python app.py
 ```
 
 ## Notes
