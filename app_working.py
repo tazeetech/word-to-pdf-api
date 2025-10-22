@@ -25,14 +25,32 @@ def allowed_file(filename):
 
 def find_libreoffice():
     """Find LibreOffice installation"""
-    possible_paths = [
-        r"C:\Program Files\LibreOffice\program\soffice.exe",
-        r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
-        r"C:\Program Files\LibreOffice\program\libreoffice.exe",
-        r"C:\Program Files (x86)\LibreOffice\program\libreoffice.exe",
-        "libreoffice",  # If in PATH
-        "soffice"       # If in PATH
-    ]
+    import platform
+    
+    system = platform.system().lower()
+    
+    if system == "windows":
+        # Windows paths
+        possible_paths = [
+            r"C:\Program Files\LibreOffice\program\soffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+            r"C:\Program Files\LibreOffice\program\libreoffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\libreoffice.exe",
+            "libreoffice",  # If in PATH
+            "soffice"       # If in PATH
+        ]
+    else:
+        # Linux/Unix paths (including Render.com)
+        possible_paths = [
+            "/usr/bin/libreoffice",
+            "/usr/bin/soffice",
+            "/usr/local/bin/libreoffice",
+            "/usr/local/bin/soffice",
+            "/opt/libreoffice/program/soffice",
+            "/opt/libreoffice/program/libreoffice",
+            "libreoffice",  # If in PATH
+            "soffice"       # If in PATH
+        ]
     
     for path in possible_paths:
         if os.path.exists(path):
@@ -80,17 +98,26 @@ def convert_with_libreoffice(input_path, output_path):
         # Get output directory
         output_dir = os.path.dirname(output_path)
         
-        # Run LibreOffice command
+        # Run LibreOffice command with Linux-compatible arguments
         cmd = [
             libreoffice_path,
             '--headless',
             '--convert-to', 'pdf',
             '--outdir', output_dir,
+            '--norestore',
+            '--nofirststartwizard',
+            '--nologo',
             input_path
         ]
         
         print(f"Running command: {' '.join(cmd)}")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        
+        # Set environment variables for better compatibility
+        env = os.environ.copy()
+        env['HOME'] = '/tmp'  # Set HOME to writable directory
+        env['USER'] = 'render'  # Set user for LibreOffice
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
         
         print(f"Return code: {result.returncode}")
         if result.stdout:
@@ -116,6 +143,9 @@ def convert_with_libreoffice(input_path, output_path):
             print(f"❌ LibreOffice conversion failed with return code {result.returncode}")
             return False
         
+    except subprocess.TimeoutExpired:
+        print("❌ LibreOffice conversion timed out")
+        return False
     except Exception as e:
         print(f"❌ LibreOffice conversion failed: {e}")
         return False
@@ -302,9 +332,14 @@ if __name__ == '__main__':
     else:
         print(f"\n✅ {working_tools} conversion tools available - Excellent!")
     
+    # Get port from environment variable (for Render.com) or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_ENV') != 'production'
+    
     print("\n" + "=" * 60)
-    print("🚀 Starting server on http://localhost:5000")
+    print(f"🚀 Starting server on http://0.0.0.0:{port}")
+    print(f"Debug mode: {debug_mode}")
     print("Press Ctrl+C to stop")
     print("=" * 60)
     
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
