@@ -37,20 +37,58 @@ fc-cache -fv
 
 # Verify LibreOffice installation
 echo "✅ Verifying LibreOffice installation..."
+
+# Check libreoffice command
 if command -v libreoffice &> /dev/null; then
     echo "✅ LibreOffice installed successfully!"
     libreoffice --version
+    LIBREOFFICE_CMD="libreoffice"
 else
-    echo "❌ LibreOffice installation failed!"
-    exit 1
+    echo "❌ libreoffice command not found!"
+    LIBREOFFICE_CMD=""
 fi
 
 # Check if soffice is available (alternative command)
 if command -v soffice &> /dev/null; then
     echo "✅ LibreOffice soffice command available!"
     soffice --version
+    SOFFICE_CMD="soffice"
 else
-    echo "⚠️  soffice command not found, but libreoffice is available"
+    echo "⚠️  soffice command not found"
+    SOFFICE_CMD=""
+fi
+
+# If neither command is found, try to find the executable
+if [ -z "$LIBREOFFICE_CMD" ] && [ -z "$SOFFICE_CMD" ]; then
+    echo "🔍 Searching for LibreOffice executables..."
+    
+    # Look for soffice in common locations
+    for path in /usr/bin/soffice /usr/local/bin/soffice /opt/libreoffice/program/soffice; do
+        if [ -f "$path" ]; then
+            echo "✅ Found soffice at: $path"
+            SOFFICE_CMD="$path"
+            break
+        fi
+    done
+    
+    # Look for libreoffice in common locations
+    for path in /usr/bin/libreoffice /usr/local/bin/libreoffice /opt/libreoffice/program/libreoffice; do
+        if [ -f "$path" ]; then
+            echo "✅ Found libreoffice at: $path"
+            LIBREOFFICE_CMD="$path"
+            break
+        fi
+    done
+fi
+
+# Final check
+if [ -n "$LIBREOFFICE_CMD" ] || [ -n "$SOFFICE_CMD" ]; then
+    echo "✅ LibreOffice installation verified!"
+else
+    echo "❌ LibreOffice installation failed - no executables found!"
+    echo "🔍 Checking installed packages..."
+    dpkg -l | grep -i libreoffice || echo "No LibreOffice packages found"
+    exit 1
 fi
 
 echo "🎉 LibreOffice installation completed successfully!"

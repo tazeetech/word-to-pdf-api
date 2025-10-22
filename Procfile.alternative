@@ -1,1 +1,0 @@
-web: chmod +x install_libreoffice.sh && bash install_libreoffice.sh && python -m gunicorn app_working:app --bind 0.0.0.0:$PORT
