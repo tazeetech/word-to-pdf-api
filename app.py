@@ -133,6 +133,75 @@ def convert_with_docx2pdf(input_path, output_path):
         print(f"❌ docx2pdf conversion failed: {e}")
         return False
 
+def convert_with_weasyprint(input_path, output_path):
+    """Convert using WeasyPrint (pure Python, no external dependencies)"""
+    try:
+        from docx import Document
+        from weasyprint import HTML, CSS
+        from weasyprint.text.fonts import FontConfiguration
+        import tempfile
+        import uuid
+        
+        print(f"Converting with WeasyPrint: {input_path} -> {output_path}")
+        
+        # Read the Word document
+        doc = Document(input_path)
+        
+        # Convert to HTML
+        html_content = "<html><head><meta charset='utf-8'></head><body>"
+        
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                # Basic paragraph formatting
+                style = paragraph.style.name
+                if 'Heading' in style:
+                    level = style.replace('Heading ', '')
+                    html_content += f"<h{level}>{paragraph.text}</h{level}>"
+                else:
+                    html_content += f"<p>{paragraph.text}</p>"
+        
+        # Add tables
+        for table in doc.tables:
+            html_content += "<table border='1' style='border-collapse: collapse; margin: 10px 0;'>"
+            for row in table.rows:
+                html_content += "<tr>"
+                for cell in row.cells:
+                    html_content += f"<td style='padding: 5px; border: 1px solid #ccc;'>{cell.text}</td>"
+                html_content += "</tr>"
+            html_content += "</table>"
+        
+        html_content += "</body></html>"
+        
+        # Create temporary HTML file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_html:
+            temp_html.write(html_content)
+            temp_html_path = temp_html.name
+        
+        try:
+            # Convert HTML to PDF using WeasyPrint
+            font_config = FontConfiguration()
+            HTML(filename=temp_html_path).write_pdf(output_path, font_config=font_config)
+            
+            if os.path.exists(output_path):
+                file_size = os.path.getsize(output_path)
+                print(f"✅ WeasyPrint conversion successful! Size: {file_size:,} bytes")
+                return True
+            else:
+                print("❌ WeasyPrint conversion failed - no output file")
+                return False
+                
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_html_path):
+                os.unlink(temp_html_path)
+            
+    except ImportError:
+        print("❌ WeasyPrint not available")
+        return False
+    except Exception as e:
+        print(f"❌ WeasyPrint conversion failed: {e}")
+        return False
+
 def convert_with_libreoffice(input_path, output_path):
     """Convert using LibreOffice"""
     try:
@@ -205,14 +274,20 @@ def convert_word_to_pdf(input_path, output_path):
     print(f"\n🚀 Starting conversion: {input_path} -> {output_path}")
     print("=" * 50)
     
-    # Method 1: Try docx2pdf (best quality and most reliable)
+    # Method 1: Try docx2pdf (best quality, but requires Windows/Word)
     print("\n1️⃣ Trying docx2pdf (Microsoft Word backend)...")
     if convert_with_docx2pdf(input_path, output_path):
         print("✅ Conversion successful with docx2pdf")
         return True
     
-    # Method 2: Try LibreOffice (fallback)
-    print("\n2️⃣ Trying LibreOffice...")
+    # Method 2: Try WeasyPrint (pure Python, works everywhere)
+    print("\n2️⃣ Trying WeasyPrint (pure Python)...")
+    if convert_with_weasyprint(input_path, output_path):
+        print("✅ Conversion successful with WeasyPrint")
+        return True
+    
+    # Method 3: Try LibreOffice (fallback)
+    print("\n3️⃣ Trying LibreOffice...")
     if convert_with_libreoffice(input_path, output_path):
         print("✅ Conversion successful with LibreOffice")
         return True
@@ -225,6 +300,7 @@ def check_conversion_tools():
     """Check which conversion tools are available"""
     tools = {
         'docx2pdf': False,
+        'weasyprint': False,
         'libreoffice': False
     }
     
@@ -235,6 +311,14 @@ def check_conversion_tools():
         print("✅ docx2pdf available")
     except ImportError:
         print("❌ docx2pdf not available")
+    
+    # Check WeasyPrint
+    try:
+        import weasyprint
+        tools['weasyprint'] = True
+        print("✅ WeasyPrint available")
+    except ImportError:
+        print("❌ WeasyPrint not available")
     
     # Check LibreOffice
     libreoffice_path = find_libreoffice()
@@ -435,10 +519,91 @@ def debug_info():
     
     return jsonify(debug_info)
 
+def install_libreoffice_if_needed():
+    """Install LibreOffice if not available (for Render.com)"""
+    import subprocess
+    import platform
+    import os
+    
+    # Only try to install on Linux systems (like Render.com)
+    if platform.system().lower() != 'linux':
+        print("🔍 Not on Linux system, skipping LibreOffice installation")
+        return
+    
+    # Check if LibreOffice is already available
+    if find_libreoffice():
+        print("✅ LibreOffice already available")
+        return
+    
+    print("🔧 LibreOffice not found, attempting installation...")
+    print("⚠️  This may take 2-3 minutes on first startup...")
+    
+    try:
+        # Check if we have sudo/root access
+        if os.geteuid() != 0:
+            print("❌ Need root access to install LibreOffice")
+            print("💡 Trying alternative installation methods...")
+            
+            # Try using apt without sudo (might work in some containers)
+            try:
+                print("📦 Trying apt-get without sudo...")
+                subprocess.run(['apt-get', 'update', '-y'], check=True, timeout=120)
+                subprocess.run([
+                    'apt-get', 'install', '-y',
+                    'libreoffice',
+                    'libreoffice-writer',
+                    'fonts-liberation',
+                    'fonts-dejavu-core'
+                ], check=True, timeout=300)
+                print("✅ LibreOffice installed successfully!")
+                return
+            except:
+                print("❌ apt-get without sudo failed")
+        
+        # Standard installation with root access
+        print("📦 Updating package list...")
+        subprocess.run(['apt-get', 'update', '-y'], check=True, timeout=300)
+        
+        print("📥 Installing LibreOffice...")
+        subprocess.run([
+            'apt-get', 'install', '-y',
+            'libreoffice',
+            'libreoffice-writer',
+            'libreoffice-calc',
+            'libreoffice-impress',
+            'fonts-liberation',
+            'fonts-dejavu-core',
+            'fonts-freefont-ttf'
+        ], check=True, timeout=600)
+        
+        print("🔄 Updating font cache...")
+        subprocess.run(['fc-cache', '-fv'], check=True, timeout=60)
+        
+        print("✅ LibreOffice installation completed!")
+        
+        # Verify installation
+        if find_libreoffice():
+            print("✅ LibreOffice verification successful!")
+        else:
+            print("⚠️  LibreOffice installed but not detected")
+        
+    except subprocess.CalledProcessError as e:
+        print(f"❌ LibreOffice installation failed: {e}")
+        print("💡 This is normal on some hosting platforms")
+    except subprocess.TimeoutExpired:
+        print("❌ LibreOffice installation timed out")
+        print("💡 This is normal on some hosting platforms")
+    except Exception as e:
+        print(f"❌ LibreOffice installation error: {e}")
+        print("💡 This is normal on some hosting platforms")
+
 if __name__ == '__main__':
     print("=" * 60)
     print("Working Word to PDF Converter")
     print("=" * 60)
+    
+    # Try to install LibreOffice if needed (for Render.com)
+    install_libreoffice_if_needed()
     
     # Check available tools
     print("\n🔍 Checking available conversion tools...")

@@ -3,6 +3,9 @@ python-docx==0.8.11
 Werkzeug==2.3.7
 gunicorn==23.0.0
 docx2pdf==0.1.8
+weasyprint==62.3
+reportlab==4.0.9
 
 # Note: LibreOffice is installed via install_libreoffice.sh script
 # This ensures LibreOffice works on Render.com deployment
+# WeasyPrint and ReportLab provide alternative PDF conversion methods
