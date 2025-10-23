@@ -6,6 +6,5 @@ docx2pdf==0.1.8
 weasyprint==62.3
 reportlab==4.0.9
 
-# Note: LibreOffice is installed via install_libreoffice.sh script
-# This ensures LibreOffice works on Render.com deployment
+# LibreOffice is installed via Dockerfile
 # WeasyPrint and ReportLab provide alternative PDF conversion methods

@@ -519,91 +519,11 @@ def debug_info():
     
     return jsonify(debug_info)
 
-def install_libreoffice_if_needed():
-    """Install LibreOffice if not available (for Render.com)"""
-    import subprocess
-    import platform
-    import os
-    
-    # Only try to install on Linux systems (like Render.com)
-    if platform.system().lower() != 'linux':
-        print("🔍 Not on Linux system, skipping LibreOffice installation")
-        return
-    
-    # Check if LibreOffice is already available
-    if find_libreoffice():
-        print("✅ LibreOffice already available")
-        return
-    
-    print("🔧 LibreOffice not found, attempting installation...")
-    print("⚠️  This may take 2-3 minutes on first startup...")
-    
-    try:
-        # Check if we have sudo/root access
-        if os.geteuid() != 0:
-            print("❌ Need root access to install LibreOffice")
-            print("💡 Trying alternative installation methods...")
-            
-            # Try using apt without sudo (might work in some containers)
-            try:
-                print("📦 Trying apt-get without sudo...")
-                subprocess.run(['apt-get', 'update', '-y'], check=True, timeout=120)
-                subprocess.run([
-                    'apt-get', 'install', '-y',
-                    'libreoffice',
-                    'libreoffice-writer',
-                    'fonts-liberation',
-                    'fonts-dejavu-core'
-                ], check=True, timeout=300)
-                print("✅ LibreOffice installed successfully!")
-                return
-            except:
-                print("❌ apt-get without sudo failed")
-        
-        # Standard installation with root access
-        print("📦 Updating package list...")
-        subprocess.run(['apt-get', 'update', '-y'], check=True, timeout=300)
-        
-        print("📥 Installing LibreOffice...")
-        subprocess.run([
-            'apt-get', 'install', '-y',
-            'libreoffice',
-            'libreoffice-writer',
-            'libreoffice-calc',
-            'libreoffice-impress',
-            'fonts-liberation',
-            'fonts-dejavu-core',
-            'fonts-freefont-ttf'
-        ], check=True, timeout=600)
-        
-        print("🔄 Updating font cache...")
-        subprocess.run(['fc-cache', '-fv'], check=True, timeout=60)
-        
-        print("✅ LibreOffice installation completed!")
-        
-        # Verify installation
-        if find_libreoffice():
-            print("✅ LibreOffice verification successful!")
-        else:
-            print("⚠️  LibreOffice installed but not detected")
-        
-    except subprocess.CalledProcessError as e:
-        print(f"❌ LibreOffice installation failed: {e}")
-        print("💡 This is normal on some hosting platforms")
-    except subprocess.TimeoutExpired:
-        print("❌ LibreOffice installation timed out")
-        print("💡 This is normal on some hosting platforms")
-    except Exception as e:
-        print(f"❌ LibreOffice installation error: {e}")
-        print("💡 This is normal on some hosting platforms")
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Working Word to PDF Converter")
+    print("Word to PDF Converter")
     print("=" * 60)
-    
-    # Try to install LibreOffice if needed (for Render.com)
-    install_libreoffice_if_needed()
     
     # Check available tools
     print("\n🔍 Checking available conversion tools...")
@@ -618,7 +538,7 @@ if __name__ == '__main__':
     
     if working_tools == 0:
         print("\n⚠️  WARNING: No conversion tools available!")
-        print("Please install Microsoft Word or LibreOffice")
+        print("LibreOffice should be installed via Docker")
     elif working_tools == 1:
         print(f"\n✅ {working_tools} conversion tool available")
     else:

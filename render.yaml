@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: word-to-pdf-converter
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
