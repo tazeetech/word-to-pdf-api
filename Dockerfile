@@ -1,7 +1,7 @@
 # Use a lightweight Python image
 FROM python:3.11-slim
 
-# Install system dependencies including LibreOffice and WeasyPrint dependencies
+# Install LibreOffice and essential dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libreoffice \
@@ -9,21 +9,18 @@ RUN apt-get update && \
     fonts-liberation \
     fonts-dejavu-core \
     fontconfig \
-    libpango-1.0-0 \
-    libpangoft2-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info \
-    libcairo2 \
-    libpango1.0-dev \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-dev \
-    libxml2-dev \
-    libxslt1-dev \
-    zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -fv
+
+# Install WeasyPrint dependencies (minimal set)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libpango-1.0-0 \
+    libcairo2 \
+    libgdk-pixbuf2.0-0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
 WORKDIR /app

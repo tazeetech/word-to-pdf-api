@@ -134,73 +134,10 @@ def convert_with_docx2pdf(input_path, output_path):
         return False
 
 def convert_with_weasyprint(input_path, output_path):
-    """Convert using WeasyPrint (pure Python, no external dependencies)"""
-    try:
-        from docx import Document
-        from weasyprint import HTML, CSS
-        from weasyprint.text.fonts import FontConfiguration
-        import tempfile
-        import uuid
-        
-        print(f"Converting with WeasyPrint: {input_path} -> {output_path}")
-        
-        # Read the Word document
-        doc = Document(input_path)
-        
-        # Convert to HTML
-        html_content = "<html><head><meta charset='utf-8'></head><body>"
-        
-        for paragraph in doc.paragraphs:
-            if paragraph.text.strip():
-                # Basic paragraph formatting
-                style = paragraph.style.name
-                if 'Heading' in style:
-                    level = style.replace('Heading ', '')
-                    html_content += f"<h{level}>{paragraph.text}</h{level}>"
-                else:
-                    html_content += f"<p>{paragraph.text}</p>"
-        
-        # Add tables
-        for table in doc.tables:
-            html_content += "<table border='1' style='border-collapse: collapse; margin: 10px 0;'>"
-            for row in table.rows:
-                html_content += "<tr>"
-                for cell in row.cells:
-                    html_content += f"<td style='padding: 5px; border: 1px solid #ccc;'>{cell.text}</td>"
-                html_content += "</tr>"
-            html_content += "</table>"
-        
-        html_content += "</body></html>"
-        
-        # Create temporary HTML file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as temp_html:
-            temp_html.write(html_content)
-            temp_html_path = temp_html.name
-        
-        try:
-            # Convert HTML to PDF using WeasyPrint
-            font_config = FontConfiguration()
-            HTML(filename=temp_html_path).write_pdf(output_path, font_config=font_config)
-            
-            if os.path.exists(output_path):
-                file_size = os.path.getsize(output_path)
-                print(f"✅ WeasyPrint conversion successful! Size: {file_size:,} bytes")
-                return True
-            else:
-                print("❌ WeasyPrint conversion failed - no output file")
-                return False
-                
-        finally:
-            # Clean up temporary file
-            if os.path.exists(temp_html_path):
-                os.unlink(temp_html_path)
-            
-    except (ImportError, OSError) as e:
-        print(f"❌ WeasyPrint not available: {e}")
-        return False
-    except Exception as e:
-        print(f"❌ WeasyPrint conversion failed: {e}")
-        return False
+    """Convert using WeasyPrint (currently disabled to avoid dependency issues)"""
+    print("❌ WeasyPrint temporarily disabled to avoid dependency conflicts")
+    print("💡 Using LibreOffice as primary conversion method")
+    return False
 
 def convert_with_libreoffice(input_path, output_path):
     """Convert using LibreOffice"""
@@ -312,15 +249,9 @@ def check_conversion_tools():
     else:
         print("❌ LibreOffice not found")
     
-    # Check WeasyPrint (fallback method)
-    try:
-        import weasyprint
-        # Test if WeasyPrint can actually work by trying to create a simple HTML
-        from weasyprint import HTML, CSS
-        tools['weasyprint'] = True
-        print("✅ WeasyPrint available")
-    except (ImportError, OSError, Exception) as e:
-        print(f"❌ WeasyPrint not available: {e}")
+    # Check WeasyPrint (currently disabled)
+    tools['weasyprint'] = False
+    print("❌ WeasyPrint temporarily disabled to avoid dependency conflicts")
     
     # Check docx2pdf (fallback method)
     try:

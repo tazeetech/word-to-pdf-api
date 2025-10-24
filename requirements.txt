@@ -3,8 +3,8 @@ python-docx==0.8.11
 Werkzeug==2.3.7
 gunicorn==23.0.0
 docx2pdf==0.1.8
-weasyprint==62.3
 reportlab==4.0.9
 
-# LibreOffice is installed via Dockerfile
-# WeasyPrint and ReportLab provide alternative PDF conversion methods
+# LibreOffice is installed via Dockerfile (primary method)
+# WeasyPrint temporarily removed to avoid dependency conflicts
+# docx2pdf and ReportLab provide alternative PDF conversion methods
