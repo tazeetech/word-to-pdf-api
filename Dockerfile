@@ -1,7 +1,7 @@
 # Use a lightweight Python image
 FROM python:3.11-slim
 
-# Install system dependencies including LibreOffice in one layer
+# Install system dependencies including LibreOffice and WeasyPrint dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libreoffice \
@@ -9,6 +9,18 @@ RUN apt-get update && \
     fonts-liberation \
     fonts-dejavu-core \
     fontconfig \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    libcairo2 \
+    libpango1.0-dev \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && fc-cache -fv
@@ -32,7 +44,7 @@ RUN mkdir -p uploads
 ENV FLASK_ENV=production
 
 # Expose port (Render will set PORT dynamically)
-EXPOSE $PORT
+EXPOSE 8000
 
 # Run the app using Gunicorn with dynamic port
 CMD gunicorn -w 2 -b 0.0.0.0:$PORT app:app

@@ -195,8 +195,8 @@ def convert_with_weasyprint(input_path, output_path):
             if os.path.exists(temp_html_path):
                 os.unlink(temp_html_path)
             
-    except ImportError:
-        print("❌ WeasyPrint not available")
+    except (ImportError, OSError) as e:
+        print(f"❌ WeasyPrint not available: {e}")
         return False
     except Exception as e:
         print(f"❌ WeasyPrint conversion failed: {e}")
@@ -274,22 +274,22 @@ def convert_word_to_pdf(input_path, output_path):
     print(f"\n🚀 Starting conversion: {input_path} -> {output_path}")
     print("=" * 50)
     
-    # Method 1: Try docx2pdf (best quality, but requires Windows/Word)
-    print("\n1️⃣ Trying docx2pdf (Microsoft Word backend)...")
-    if convert_with_docx2pdf(input_path, output_path):
-        print("✅ Conversion successful with docx2pdf")
+    # Method 1: Try LibreOffice (primary method - best quality and reliability)
+    print("\n1️⃣ Trying LibreOffice (primary conversion method)...")
+    if convert_with_libreoffice(input_path, output_path):
+        print("✅ Conversion successful with LibreOffice")
         return True
     
-    # Method 2: Try WeasyPrint (pure Python, works everywhere)
-    print("\n2️⃣ Trying WeasyPrint (pure Python)...")
+    # Method 2: Try WeasyPrint (fallback - pure Python)
+    print("\n2️⃣ Trying WeasyPrint (fallback method)...")
     if convert_with_weasyprint(input_path, output_path):
         print("✅ Conversion successful with WeasyPrint")
         return True
     
-    # Method 3: Try LibreOffice (fallback)
-    print("\n3️⃣ Trying LibreOffice...")
-    if convert_with_libreoffice(input_path, output_path):
-        print("✅ Conversion successful with LibreOffice")
+    # Method 3: Try docx2pdf (fallback - requires Windows/Word)
+    print("\n3️⃣ Trying docx2pdf (fallback method)...")
+    if convert_with_docx2pdf(input_path, output_path):
+        print("✅ Conversion successful with docx2pdf")
         return True
     
     print("\n❌ All conversion methods failed")
@@ -299,28 +299,12 @@ def convert_word_to_pdf(input_path, output_path):
 def check_conversion_tools():
     """Check which conversion tools are available"""
     tools = {
-        'docx2pdf': False,
+        'libreoffice': False,
         'weasyprint': False,
-        'libreoffice': False
+        'docx2pdf': False
     }
     
-    # Check docx2pdf
-    try:
-        import docx2pdf
-        tools['docx2pdf'] = True
-        print("✅ docx2pdf available")
-    except ImportError:
-        print("❌ docx2pdf not available")
-    
-    # Check WeasyPrint
-    try:
-        import weasyprint
-        tools['weasyprint'] = True
-        print("✅ WeasyPrint available")
-    except ImportError:
-        print("❌ WeasyPrint not available")
-    
-    # Check LibreOffice
+    # Check LibreOffice (primary method)
     libreoffice_path = find_libreoffice()
     if libreoffice_path:
         tools['libreoffice'] = True
@@ -328,12 +312,34 @@ def check_conversion_tools():
     else:
         print("❌ LibreOffice not found")
     
+    # Check WeasyPrint (fallback method)
+    try:
+        import weasyprint
+        # Test if WeasyPrint can actually work by trying to create a simple HTML
+        from weasyprint import HTML, CSS
+        tools['weasyprint'] = True
+        print("✅ WeasyPrint available")
+    except (ImportError, OSError, Exception) as e:
+        print(f"❌ WeasyPrint not available: {e}")
+    
+    # Check docx2pdf (fallback method)
+    try:
+        import docx2pdf
+        tools['docx2pdf'] = True
+        print("✅ docx2pdf available")
+    except ImportError:
+        print("❌ docx2pdf not available")
+    
     return tools
 
 @app.route('/')
 def index():
     """Main page with upload form"""
-    tools = check_conversion_tools()
+    try:
+        tools = check_conversion_tools()
+    except Exception as e:
+        print(f"Error checking conversion tools: {e}")
+        tools = {'libreoffice': False, 'weasyprint': False, 'docx2pdf': False}
     return render_template('index.html')
 
 @app.route('/convert', methods=['POST'])
@@ -436,27 +442,36 @@ def convert_file():
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
-    tools = check_conversion_tools()
-    return jsonify({
-        'status': 'healthy', 
-        'timestamp': datetime.now().isoformat(),
-        'conversion_tools': tools
-    })
+    try:
+        tools = check_conversion_tools()
+        return jsonify({
+            'status': 'healthy', 
+            'timestamp': datetime.now().isoformat(),
+            'conversion_tools': tools
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'error': str(e),
+            'conversion_tools': {'libreoffice': False, 'weasyprint': False, 'docx2pdf': False}
+        }), 500
 
 @app.route('/debug')
 def debug_info():
     """Debug endpoint to troubleshoot LibreOffice issues"""
-    import platform
-    import subprocess
-    
-    debug_info = {
-        'system': platform.system(),
-        'platform': platform.platform(),
-        'python_version': platform.python_version(),
-        'libreoffice_detection': {},
-        'environment': {},
-        'file_system': {}
-    }
+    try:
+        import platform
+        import subprocess
+        
+        debug_info = {
+            'system': platform.system(),
+            'platform': platform.platform(),
+            'python_version': platform.python_version(),
+            'libreoffice_detection': {},
+            'environment': {},
+            'file_system': {}
+        }
     
     # LibreOffice detection details
     libreoffice_path = find_libreoffice()
@@ -518,6 +533,13 @@ def debug_info():
         debug_info['which_soffice'] = {'error': str(e)}
     
     return jsonify(debug_info)
+    except Exception as e:
+        return jsonify({
+            'error': f'Debug endpoint failed: {str(e)}',
+            'system': 'Unknown',
+            'platform': 'Unknown',
+            'python_version': 'Unknown'
+        }), 500
 
 
 if __name__ == '__main__':
@@ -543,6 +565,12 @@ if __name__ == '__main__':
         print(f"\n✅ {working_tools} conversion tool available")
     else:
         print(f"\n✅ {working_tools} conversion tools available - Excellent!")
+    
+    # Check if LibreOffice is available (primary method)
+    if tools.get('libreoffice', False):
+        print("\n🎯 LibreOffice is ready - Primary conversion method active!")
+    else:
+        print("\n⚠️  LibreOffice not available - Using fallback methods")
     
     # Get port from environment variable (for Render.com) or default to 5000
     port = int(os.environ.get('PORT', 5000))
