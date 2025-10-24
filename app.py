@@ -387,67 +387,67 @@ def debug_info():
             'environment': {},
             'file_system': {}
         }
-    
-    # LibreOffice detection details
-    libreoffice_path = find_libreoffice()
-    debug_info['libreoffice_detection'] = {
-        'found_path': libreoffice_path,
-        'exists': os.path.exists(libreoffice_path) if libreoffice_path else False,
-        'is_executable': os.access(libreoffice_path, os.X_OK) if libreoffice_path else False
-    }
-    
-    # Environment variables
-    debug_info['environment'] = {
-        'PATH': os.environ.get('PATH', 'Not set'),
-        'HOME': os.environ.get('HOME', 'Not set'),
-        'USER': os.environ.get('USER', 'Not set'),
-        'PORT': os.environ.get('PORT', 'Not set')
-    }
-    
-    # File system checks
-    common_paths = ['/usr/bin', '/usr/local/bin', '/opt/libreoffice/program']
-    debug_info['file_system'] = {}
-    
-    for path in common_paths:
-        if os.path.exists(path):
-            try:
-                files = os.listdir(path)
-                libreoffice_files = [f for f in files if 'libre' in f.lower() or 'office' in f.lower()]
-                debug_info['file_system'][path] = {
-                    'exists': True,
-                    'libreoffice_files': libreoffice_files,
-                    'all_files_count': len(files)
-                }
-            except Exception as e:
-                debug_info['file_system'][path] = {
-                    'exists': True,
-                    'error': str(e)
-                }
-        else:
-            debug_info['file_system'][path] = {'exists': False}
-    
-    # Try to run LibreOffice commands
-    try:
-        result = subprocess.run(['which', 'libreoffice'], capture_output=True, text=True, timeout=5)
-        debug_info['which_libreoffice'] = {
-            'returncode': result.returncode,
-            'stdout': result.stdout.strip(),
-            'stderr': result.stderr.strip()
+        
+        # LibreOffice detection details
+        libreoffice_path = find_libreoffice()
+        debug_info['libreoffice_detection'] = {
+            'found_path': libreoffice_path,
+            'exists': os.path.exists(libreoffice_path) if libreoffice_path else False,
+            'is_executable': os.access(libreoffice_path, os.X_OK) if libreoffice_path else False
         }
-    except Exception as e:
-        debug_info['which_libreoffice'] = {'error': str(e)}
-    
-    try:
-        result = subprocess.run(['which', 'soffice'], capture_output=True, text=True, timeout=5)
-        debug_info['which_soffice'] = {
-            'returncode': result.returncode,
-            'stdout': result.stdout.strip(),
-            'stderr': result.stderr.strip()
+        
+        # Environment variables
+        debug_info['environment'] = {
+            'PATH': os.environ.get('PATH', 'Not set'),
+            'HOME': os.environ.get('HOME', 'Not set'),
+            'USER': os.environ.get('USER', 'Not set'),
+            'PORT': os.environ.get('PORT', 'Not set')
         }
-    except Exception as e:
-        debug_info['which_soffice'] = {'error': str(e)}
     
-    return jsonify(debug_info)
+        # File system checks
+        common_paths = ['/usr/bin', '/usr/local/bin', '/opt/libreoffice/program']
+        debug_info['file_system'] = {}
+        
+        for path in common_paths:
+            if os.path.exists(path):
+                try:
+                    files = os.listdir(path)
+                    libreoffice_files = [f for f in files if 'libre' in f.lower() or 'office' in f.lower()]
+                    debug_info['file_system'][path] = {
+                        'exists': True,
+                        'libreoffice_files': libreoffice_files,
+                        'all_files_count': len(files)
+                    }
+                except Exception as e:
+                    debug_info['file_system'][path] = {
+                        'exists': True,
+                        'error': str(e)
+                    }
+            else:
+                debug_info['file_system'][path] = {'exists': False}
+        
+        # Try to run LibreOffice commands
+        try:
+            result = subprocess.run(['which', 'libreoffice'], capture_output=True, text=True, timeout=5)
+            debug_info['which_libreoffice'] = {
+                'returncode': result.returncode,
+                'stdout': result.stdout.strip(),
+                'stderr': result.stderr.strip()
+            }
+        except Exception as e:
+            debug_info['which_libreoffice'] = {'error': str(e)}
+        
+        try:
+            result = subprocess.run(['which', 'soffice'], capture_output=True, text=True, timeout=5)
+            debug_info['which_soffice'] = {
+                'returncode': result.returncode,
+                'stdout': result.stdout.strip(),
+                'stderr': result.stderr.strip()
+            }
+        except Exception as e:
+            debug_info['which_soffice'] = {'error': str(e)}
+        
+        return jsonify(debug_info)
     except Exception as e:
         return jsonify({
             'error': f'Debug endpoint failed: {str(e)}',
