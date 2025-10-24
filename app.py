@@ -133,11 +133,6 @@ def convert_with_docx2pdf(input_path, output_path):
         print(f"❌ docx2pdf conversion failed: {e}")
         return False
 
-def convert_with_weasyprint(input_path, output_path):
-    """Convert using WeasyPrint (currently disabled to avoid dependency issues)"""
-    print("❌ WeasyPrint temporarily disabled to avoid dependency conflicts")
-    print("💡 Using LibreOffice as primary conversion method")
-    return False
 
 def convert_with_libreoffice(input_path, output_path):
     """Convert using LibreOffice"""
@@ -217,14 +212,8 @@ def convert_word_to_pdf(input_path, output_path):
         print("✅ Conversion successful with LibreOffice")
         return True
     
-    # Method 2: Try WeasyPrint (fallback - pure Python)
-    print("\n2️⃣ Trying WeasyPrint (fallback method)...")
-    if convert_with_weasyprint(input_path, output_path):
-        print("✅ Conversion successful with WeasyPrint")
-        return True
-    
-    # Method 3: Try docx2pdf (fallback - requires Windows/Word)
-    print("\n3️⃣ Trying docx2pdf (fallback method)...")
+    # Method 2: Try docx2pdf (fallback - requires Windows/Word)
+    print("\n2️⃣ Trying docx2pdf (fallback method)...")
     if convert_with_docx2pdf(input_path, output_path):
         print("✅ Conversion successful with docx2pdf")
         return True
@@ -237,7 +226,6 @@ def check_conversion_tools():
     """Check which conversion tools are available"""
     tools = {
         'libreoffice': False,
-        'weasyprint': False,
         'docx2pdf': False
     }
     
@@ -248,10 +236,6 @@ def check_conversion_tools():
         print(f"✅ LibreOffice available at: {libreoffice_path}")
     else:
         print("❌ LibreOffice not found")
-    
-    # Check WeasyPrint (currently disabled)
-    tools['weasyprint'] = False
-    print("❌ WeasyPrint temporarily disabled to avoid dependency conflicts")
     
     # Check docx2pdf (fallback method)
     try:
@@ -270,7 +254,7 @@ def index():
         tools = check_conversion_tools()
     except Exception as e:
         print(f"Error checking conversion tools: {e}")
-        tools = {'libreoffice': False, 'weasyprint': False, 'docx2pdf': False}
+        tools = {'libreoffice': False, 'docx2pdf': False}
     return render_template('index.html')
 
 @app.route('/convert', methods=['POST'])
@@ -385,7 +369,7 @@ def health_check():
             'status': 'unhealthy',
             'timestamp': datetime.now().isoformat(),
             'error': str(e),
-            'conversion_tools': {'libreoffice': False, 'weasyprint': False, 'docx2pdf': False}
+            'conversion_tools': {'libreoffice': False, 'docx2pdf': False}
         }), 500
 
 @app.route('/debug')
